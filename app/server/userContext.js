@@ -1,62 +1,74 @@
 "use client";
-import { createContext, useState } from "react";
+import { createContext, useState, useEffect } from "react";
 import axios from "axios";
-import useSWR from "swr";
 import baseUrl from "@/lib/baseUrl";
-// Set baseURL untuk axios
-
-// Fetcher function untuk SWR
-const fetcher = async (url) => {
-  const response = await axios.get(`${baseUrl}`, { withCredentials: true });
-  return response.data.data;
-};
 
 // Buat context User
 export const UserContext = createContext();
 
 // Provider untuk UserContext
 export const UserProvider = ({ children }) => {
-  const {
-    data: user,
-    error,
-    mutate,
-  } = useSWR("/api/v1/auth/getUser", fetcher, {
-    revalidateOnFocus: false, // Nonaktifkan revalidation saat fokus
-    refreshInterval: 30000, // Polling setiap 30 detik
-  });
-
-  // Fungsi untuk logout
-  const logout = async () => {
-    try {
-      await axios.get("/api/v1/auth/logout", { withCredentials: true });
-      mutate(null); // Menghapus data pengguna dan memperbarui SWR cache
-    } catch (error) {
-      console.error("Error logging out:", error);
-    }
-  };
-
-  // Fungsi untuk registrasi pengguna
-  const registerUser = async (userData) => {
-    try {
-      await axios.post("/api/v1/auth/register", userData, {
-        withCredentials: true,
-      });
-      mutate(); // Memperbarui SWR cache setelah registrasi
-    } catch (error) {
-      throw error; // Lempar error untuk ditangani di komponen
-    }
-  };
-
-  // State untuk data pengguna
+  const [user, setUser] = useState(null); // State untuk data pengguna
+  const [error, setError] = useState(null); // State untuk error
   const [userState, setUserState] = useState({
     name: "",
     email: "",
     password: "",
   });
 
+  // Fungsi untuk mendapatkan data pengguna
+  const fetchUser = async () => {
+    try {
+      const response = await axios.get(`${baseUrl}/api/v1/auth/getUser`, {
+        withCredentials: true,
+      });
+      setUser(response.data.data);
+      setError(null);
+    } catch (error) {
+      setUser(null);
+      setError(error.response?.data || error.message);
+    }
+  };
+
+  // Ambil data pengguna saat komponen dimuat
+  useEffect(() => {
+    fetchUser();
+  }, []);
+
+  // Fungsi untuk logout
+  const logout = async () => {
+    try {
+      await axios.get(`${baseUrl}/api/v1/auth/logout`, {
+        withCredentials: true,
+      });
+      setUser(null); // Menghapus data pengguna setelah logout
+    } catch (error) {
+      console.error(
+        "Error logging out:",
+        error.response?.data || error.message
+      );
+    }
+  };
+
+  // Fungsi untuk registrasi pengguna
+  const registerUser = async (userData) => {
+    try {
+      await axios.post(`${baseUrl}/api/v1/auth/register`, userData, {
+        withCredentials: true,
+      });
+      fetchUser(); // Memperbarui data pengguna setelah registrasi
+    } catch (error) {
+      console.error(
+        "Error registering user:",
+        error.response?.data || error.message
+      );
+      throw error; // Lempar error untuk ditangani di komponen
+    }
+  };
+
   // Handler untuk input pengguna
   const handlerUserInput = (field) => (e) => {
-    setUserState({ ...userState, [field]: e.target.value });
+    setUserState((prev) => ({ ...prev, [field]: e.target.value }));
   };
 
   return (
@@ -65,7 +77,6 @@ export const UserProvider = ({ children }) => {
         user,
         error,
         logout,
-        mutate,
         registerUser,
         userState,
         handlerUserInput,
