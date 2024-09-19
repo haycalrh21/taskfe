@@ -2,13 +2,12 @@
 import { createContext, useState } from "react";
 import axios from "axios";
 import useSWR from "swr";
-import baseUrl from "@/lib/baseUrl"; // Path ke baseUrl harus benar
+import baseUrl from "@/lib/baseUrl";
+// Set baseURL untuk axios
 
 // Fetcher function untuk SWR
 const fetcher = async (url) => {
-  const response = await axios.get(`${baseUrl}${url}`, {
-    withCredentials: true,
-  });
+  const response = await axios.get(`${baseUrl}`, { withCredentials: true });
   return response.data.data;
 };
 
@@ -30,12 +29,9 @@ export const UserProvider = ({ children }) => {
   const logout = async () => {
     try {
       await axios.get("/api/v1/auth/logout", { withCredentials: true });
-      mutate(); // Memperbarui SWR cache setelah logout
+      mutate(null); // Menghapus data pengguna dan memperbarui SWR cache
     } catch (error) {
-      console.error(
-        "Error logging out:",
-        error.response?.data || error.message
-      );
+      console.error("Error logging out:", error);
     }
   };
 
@@ -47,10 +43,6 @@ export const UserProvider = ({ children }) => {
       });
       mutate(); // Memperbarui SWR cache setelah registrasi
     } catch (error) {
-      console.error(
-        "Error registering user:",
-        error.response?.data || error.message
-      );
       throw error; // Lempar error untuk ditangani di komponen
     }
   };
@@ -64,7 +56,7 @@ export const UserProvider = ({ children }) => {
 
   // Handler untuk input pengguna
   const handlerUserInput = (field) => (e) => {
-    setUserState((prev) => ({ ...prev, [field]: e.target.value }));
+    setUserState({ ...userState, [field]: e.target.value });
   };
 
   return (
