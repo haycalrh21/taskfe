@@ -9,7 +9,6 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const router = useRouter();
-  const { mutate } = useContext(UserContext); // Ambil mutate dari context
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -24,7 +23,6 @@ const Login = () => {
       );
 
       // Memperbarui cache SWR setelah login
-      await mutate();
 
       // Redirect ke halaman dashboard atau halaman lain
       router.push("/");
