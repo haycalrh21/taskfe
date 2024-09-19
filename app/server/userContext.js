@@ -43,10 +43,7 @@ export const UserProvider = ({ children }) => {
       });
       setUser(null); // Menghapus data pengguna setelah logout
     } catch (error) {
-      console.error(
-        "Error logging out:",
-        error.response?.data || error.message
-      );
+      console.error("Error logging out:");
     }
   };
 
