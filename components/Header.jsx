@@ -133,7 +133,7 @@ const Header = ({ toggleSidebar, totalTasks }) => {
           withCredentials: true,
         }
       );
-      console.log("Task Created:", response.data);
+
       fetchTasks(); // Refresh task list setelah submit
     } catch (error) {
       console.error("Error creating task:", error);
