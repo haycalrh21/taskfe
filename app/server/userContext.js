@@ -19,7 +19,7 @@ export const UserProvider = ({ children }) => {
   // Fungsi untuk mendapatkan data pengguna
   const fetchUser = async () => {
     try {
-      const response = await axios.get(`${baseUrl}/api/v1/auth/getUser`, {
+      const response = await axios.get(`${baseUrl}/auth/getUser`, {
         withCredentials: true,
       });
       setUser(response.data.data);
@@ -38,7 +38,7 @@ export const UserProvider = ({ children }) => {
   // Fungsi untuk logout
   const logout = async () => {
     try {
-      await axios.get(`${baseUrl}/api/v1/auth/logout`, {
+      await axios.get(`${baseUrl}/auth/logout`, {
         withCredentials: true,
       });
       setUser(null); // Menghapus data pengguna setelah logout
@@ -50,7 +50,7 @@ export const UserProvider = ({ children }) => {
   // Fungsi untuk registrasi pengguna
   const registerUser = async (userData) => {
     try {
-      await axios.post(`${baseUrl}/api/v1/auth/register`, userData, {
+      await axios.post(`${baseUrl}/auth/register`, userData, {
         withCredentials: true,
       });
       fetchUser(); // Memperbarui data pengguna setelah registrasi
