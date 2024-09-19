@@ -1,49 +1,39 @@
 "use client";
 import { createContext, useState, useEffect } from "react";
 import axios from "axios";
+import useSWR from "swr";
 import baseUrl from "@/lib/baseUrl";
+
+// Fetcher function untuk SWR
+const fetcher = async (url) => {
+  const response = await axios.get(url, { withCredentials: true });
+  return response.data.data;
+};
 
 // Buat context User
 export const UserContext = createContext();
 
 // Provider untuk UserContext
 export const UserProvider = ({ children }) => {
-  const [user, setUser] = useState(null); // State untuk data pengguna
-  const [error, setError] = useState(null); // State untuk error
-  const [userState, setUserState] = useState({
-    name: "",
-    email: "",
-    password: "",
+  const {
+    data: user,
+    error,
+    mutate,
+  } = useSWR(`${baseUrl}/auth/getUser`, fetcher, {
+    revalidateOnFocus: false,
+    refreshInterval: 30000,
   });
-
-  // Fungsi untuk mendapatkan data pengguna
-  const fetchUser = async () => {
-    try {
-      const response = await axios.get(`${baseUrl}/auth/getUser`, {
-        withCredentials: true,
-      });
-      setUser(response.data.data);
-      setError(null);
-    } catch (error) {
-      setUser(null);
-      setError(error.response?.data || error.message);
-    }
-  };
-
-  // Ambil data pengguna saat komponen dimuat
-  useEffect(() => {
-    fetchUser();
-  }, []);
 
   // Fungsi untuk logout
   const logout = async () => {
     try {
-      await axios.get(`${baseUrl}/auth/logout`, {
-        withCredentials: true,
-      });
-      setUser(null); // Menghapus data pengguna setelah logout
+      await axios.get(`${baseUrl}/auth/logout`, { withCredentials: true });
+      mutate(null); // Menghapus data pengguna dan memperbarui SWR cache
     } catch (error) {
-      console.error("Error logging out:");
+      console.error(
+        "Error logging out:",
+        error.response?.data || error.message
+      );
     }
   };
 
@@ -53,7 +43,7 @@ export const UserProvider = ({ children }) => {
       await axios.post(`${baseUrl}/auth/register`, userData, {
         withCredentials: true,
       });
-      fetchUser(); // Memperbarui data pengguna setelah registrasi
+      mutate(); // Memperbarui SWR cache setelah registrasi
     } catch (error) {
       console.error(
         "Error registering user:",
@@ -62,6 +52,13 @@ export const UserProvider = ({ children }) => {
       throw error; // Lempar error untuk ditangani di komponen
     }
   };
+
+  // State untuk data pengguna
+  const [userState, setUserState] = useState({
+    name: "",
+    email: "",
+    password: "",
+  });
 
   // Handler untuk input pengguna
   const handlerUserInput = (field) => (e) => {
@@ -77,6 +74,7 @@ export const UserProvider = ({ children }) => {
         registerUser,
         userState,
         handlerUserInput,
+        mutate,
       }}
     >
       {children}
