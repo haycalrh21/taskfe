@@ -1,33 +1,28 @@
 "use client";
-import { useState, useContext } from "react";
-import { useRouter } from "next/navigation";
-import axios from "axios";
+import { useContext, useState } from "react";
 import { UserContext } from "../../server/userContext"; // Pastikan path ini benar
-import baseUrl from "@/lib/baseUrl";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
 
 const Login = () => {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const { userState, loginUser, handlerUserInput } = useContext(UserContext);
+  const [loading, setLoading] = useState(false); // Untuk menampilkan status loading jika diperlukan
   const router = useRouter();
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true); // Mulai status loading
     try {
-      await axios.post(
-        `${baseUrl}/auth/login`,
-        { email, password },
-        {
-          headers: { "Content-Type": "application/json" },
-          withCredentials: true,
-        }
-      );
-
-      // Memperbarui cache SWR setelah login
-
-      // Redirect ke halaman dashboard atau halaman lain
-      router.push("/");
+      await loginUser({
+        email: userState.email,
+        password: userState.password,
+      });
+      toast.success("Login berhasil!");
+      router.push("/"); // Redirect setelah login
     } catch (error) {
-      console.error("Error:", error.response?.data || error.message);
+      toast.error("Login gagal. Coba lagi.");
+    } finally {
+      setLoading(false); // Hentikan status loading
     }
   };
 
@@ -46,8 +41,9 @@ const Login = () => {
             <input
               type="email"
               id="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              name="email"
+              value={userState.email}
+              onChange={handlerUserInput("email")}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -62,17 +58,21 @@ const Login = () => {
             <input
               type="password"
               id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              name="password"
+              value={userState.password}
+              onChange={handlerUserInput("password")}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
           </div>
           <button
             type="submit"
-            className="w-full px-4 py-2 bg-indigo-600 text-white font-semibold rounded-md shadow-sm hover:bg-indigo-500"
+            disabled={loading} // Disable button saat loading
+            className={`w-full px-4 py-2 ${
+              loading ? "bg-gray-500" : "bg-indigo-600 hover:bg-indigo-700"
+            } text-white font-semibold rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
           >
-            Login
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
       </div>

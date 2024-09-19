@@ -66,6 +66,23 @@ export const UserProvider = ({ children }) => {
     }
   };
 
+  // Fungsi untuk login pengguna
+  const loginUser = async (userData) => {
+    try {
+      await axios.post(`${baseUrl}/auth/login`, userData, {
+        headers: { "Content-Type": "application/json" },
+        withCredentials: true,
+      });
+      fetchUser(); // Memperbarui data pengguna setelah login
+    } catch (error) {
+      console.error(
+        "Error logging in user:",
+        error.response?.data || error.message
+      );
+      throw error; // Lempar error untuk ditangani di komponen
+    }
+  };
+
   // Handler untuk input pengguna
   const handlerUserInput = (field) => (e) => {
     setUserState((prev) => ({ ...prev, [field]: e.target.value }));
@@ -78,6 +95,7 @@ export const UserProvider = ({ children }) => {
         error,
         logout,
         registerUser,
+        loginUser,
         userState,
         handlerUserInput,
       }}
