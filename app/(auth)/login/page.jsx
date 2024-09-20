@@ -1,28 +1,37 @@
 "use client";
-import { useContext, useState } from "react";
-import { UserContext } from "../../server/userContext"; // Pastikan path ini benar
+import { useState } from "react";
+import { signIn, useSession } from "next-auth/react";
+
 import { useRouter } from "next/navigation";
-import toast from "react-hot-toast";
 
 const Login = () => {
-  const { userState, loginUser, handlerUserInput } = useContext(UserContext);
-  const [loading, setLoading] = useState(false); // Untuk menampilkan status loading jika diperlukan
+  const { data: session, status } = useSession();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
+  // console.log(session);
+  if (status === "authenticated") {
+    router.replace("/"); // Ganti URL tanpa menambahkannya ke history
+    return null; // Jangan render apapun jika sudah terautentikasi
+  }
 
   const handleLogin = async (e) => {
     e.preventDefault();
-    setLoading(true); // Mulai status loading
-    try {
-      await loginUser({
-        email: userState.email,
-        password: userState.password,
-      });
-      toast.success("Login berhasil!");
-      router.push("/"); // Redirect setelah login
-    } catch (error) {
-      toast.error("Login gagal. Coba lagi.");
-    } finally {
-      setLoading(false); // Hentikan status loading
+    setError("");
+
+    // Panggil NextAuth signIn function
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false, // Jangan redirect otomatis
+    });
+
+    if (result.error) {
+      setError(result.error); // Tampilkan pesan error jika ada
+    } else {
+      // Redirect ke halaman setelah login sukses (misalnya home page)
     }
   };
 
@@ -42,8 +51,8 @@ const Login = () => {
               type="email"
               id="email"
               name="email"
-              value={userState.email}
-              onChange={handlerUserInput("email")}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -59,8 +68,8 @@ const Login = () => {
               type="password"
               id="password"
               name="password"
-              value={userState.password}
-              onChange={handlerUserInput("password")}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />

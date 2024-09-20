@@ -1,28 +1,30 @@
 "use client";
-import { useContext, useState } from "react";
-import { UserContext } from "./server/userContext"; // Pastikan path ini benar
-
-import { useRouter } from "next/navigation";
-
-import Spinner from "@/components/Spinner";
 import Layout from "@/components/layout/LayoutIndex";
 import CardTask from "@/components/page/task/CardTask";
 import CardSide from "@/components/page/task/CardSide";
+import { useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import Spinner from "@/components/Spinner";
 
 export default function Home() {
-  const { user, error, logout } = useContext(UserContext);
-  const [totalTasks, setTotalTasks] = useState(0);
+  const { data: session, status } = useSession();
   const router = useRouter();
-  if (error) {
-    router.push("/login");
+
+  if (status === "loading") {
+    <Spinner />;
+    return null;
   }
-  if (!user) return <Spinner />;
+
+  if (!session) {
+    // Jika tidak ada session, navigasi ke halaman login
+    router.push("/login");
+    return null; // Pastikan render berhenti di sini
+  }
 
   return (
     <Layout
-      mainContent={<CardTask setTotalTasks={setTotalTasks} />} // Konten utama
+      mainContent={<CardTask />} // Konten utama
       sideContent={<CardSide />}
-      totalTasks={totalTasks}
     />
   );
 }

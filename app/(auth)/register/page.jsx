@@ -1,24 +1,34 @@
 // register.js
 "use client";
-import { useContext } from "react";
-import { UserContext } from "../../server/userContext";
-import React from "react";
-import toast from "react-hot-toast";
+
+import React, { useState } from "react";
+
 import { useRouter } from "next/navigation";
+import { registerUserAction } from "@/app/action/user";
 
 const Register = () => {
-  const { registerUser, userState, handlerUserInput } = useContext(UserContext);
+  const [error, setError] = useState("");
   const router = useRouter();
-  const handleRegister = async (e) => {
+  async function handleRegister(e) {
     e.preventDefault();
-    try {
-      await registerUser(userState);
-      toast.success("Registrasi berhasil!");
-      router.push("/login");
-    } catch (error) {
-      toast.error("Registrasi gagal. Coba lagi.");
+    const formData = new FormData(e.target);
+
+    // Ambil nilai username dari FormData
+    const username = formData.get("username");
+
+    // Validasi username tidak boleh mengandung spasi
+    if (/\s/.test(username)) {
+      setError("Username cannot contain spaces.");
+      return; // Hentikan eksekusi fungsi jika ada error
     }
-  };
+
+    try {
+      await registerUserAction(formData);
+      router.push("/login"); // Arahkan pengguna ke halaman login setelah registrasi berhasil
+    } catch (err) {
+      setError(err.message); // Tampilkan pesan error jika ada
+    }
+  }
 
   return (
     <div className="flex justify-center items-center h-screen bg-gray-100">
@@ -34,10 +44,8 @@ const Register = () => {
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={userState.name}
-              onChange={handlerUserInput("name")}
+              id="username"
+              name="username"
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -53,8 +61,6 @@ const Register = () => {
               type="email"
               id="email"
               name="email"
-              value={userState.email}
-              onChange={handlerUserInput("email")}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />
@@ -70,8 +76,6 @@ const Register = () => {
               type="password"
               id="password"
               name="password"
-              value={userState.password}
-              onChange={handlerUserInput("password")}
               required
               className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
             />

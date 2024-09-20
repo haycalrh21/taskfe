@@ -19,11 +19,8 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import axios from "axios";
-import UserContext from "@/app/server/userContext";
 
-import baseUrl from "@/lib/baseUrl";
-import { useTaskContext } from "@/app/server/TaskContext";
+import { useSession } from "next-auth/react";
 
 const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   <form className="space-y-4">
@@ -99,9 +96,8 @@ const TaskForm = ({ formData, handleChange, handleSubmit }) => (
 );
 
 const Header = ({ toggleSidebar, totalTasks }) => {
-  const { user, logout } = useContext(UserContext);
-  const { fetchTasks } = useTaskContext(); // Untuk refresh task setelah submit
-
+  const { data: session } = useSession();
+  // console.log(session?.user?.email);
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -117,22 +113,16 @@ const Header = ({ toggleSidebar, totalTasks }) => {
       [name]: type === "checkbox" ? checked : value,
     });
   };
-  useEffect(() => {
-    fetchTasks();
-  }, []);
+
   const handleSubmit = async () => {
     const token = localStorage.getItem("authToken");
     try {
-      const response = await axios.post(
-        `${baseUrl}/task/create-task`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+      const response = await axios.post("", formData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
 
       fetchTasks(); // Refresh task list setelah submit
     } catch (error) {
@@ -155,7 +145,7 @@ const Header = ({ toggleSidebar, totalTasks }) => {
             </Button>
             <div>
               <h1 className="text-xl sm:text-2xl font-bold text-gray-900">
-                👋 Welcome, {user?.name}
+                👋 Welcome, {session?.user?.email}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
                 You have {totalTasks} active tasks

@@ -14,8 +14,11 @@ import {
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { PlusIcon, Trash2 } from "lucide-react";
-import baseUrl from "@/lib/baseUrl";
+
 import axios from "axios";
+import { useSession } from "next-auth/react";
+import { deleteReference, getReference } from "@/app/action/reference";
+import Link from "next/link";
 
 const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   <form
@@ -57,23 +60,27 @@ const TaskForm = ({ formData, handleChange, handleSubmit }) => (
 );
 
 const CardReference = () => {
-  const [reference, setReference] = useState([]);
+  const { data: session, status } = useSession();
+  const [loading, setLoading] = useState(false);
+
+  const [data, setDataReference] = useState([]);
 
   const fetchData = async () => {
-    const token = localStorage.getItem("authToken");
+    const userId = session?.user?._id;
 
-    try {
-      const { data } = await axios.get(`${baseUrl}/reference/references`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-      setReference(data);
-    } catch (error) {
-      console.error("Error fetching references:", error);
+    if (userId) {
+      const response = await getReference(userId);
+      const reference = JSON.parse(response);
+      setDataReference(reference);
+      // console.log(reference);
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchData();
+    }
+  }, [status]);
 
   const [formData, setFormData] = useState({
     reference: "",
@@ -97,7 +104,7 @@ const CardReference = () => {
 
     try {
       const response = await axios.post(
-        `${baseUrl}/reference/create-reference`,
+        `/reference/create-reference`,
         {
           name: formData.reference,
           link: formData.link,
@@ -122,6 +129,25 @@ const CardReference = () => {
         "Error creating reference:",
         error.response?.data || error.message
       );
+    }
+  };
+
+  const handleDeleteReference = async (referenceId) => {
+    const confirmDelete = window.confirm(
+      "Are you sure you want to delete this reference?"
+    );
+    if (!confirmDelete) return;
+
+    try {
+      setLoading(true);
+      await deleteReference(referenceId);
+      fetchData();
+      alert("Reference deleted successfully.");
+    } catch (error) {
+      console.error("Failed to delete reference:", error);
+      alert("Failed to delete reference.");
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -159,7 +185,7 @@ const CardReference = () => {
       </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {reference.map((ref) => (
+          {data.map((ref) => (
             <Card
               key={ref._id}
               className="bg-white shadow-lg rounded-lg border border-gray-200"
@@ -168,11 +194,23 @@ const CardReference = () => {
                 <div className="flex justify-between items-start">
                   <div>
                     <h3 className="font-semibold text-lg">{ref.name}</h3>
-                    <p className="text-sm text-gray-500">{ref.link}</p>
+                    <Link
+                      href={ref.link}
+                      className="text-sm text-gray-500"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {ref.link}
+                    </Link>
                   </div>
                 </div>
                 <div className="flex justify-end space-x-2 mt-4">
-                  <Button variant="outline" size="icon" className="p-1">
+                  <Button
+                    variant="outline"
+                    size="icon"
+                    className="p-1"
+                    onClick={() => handleDeleteReference(ref._id)}
+                  >
                     <Trash2 className="h-4 w-4 text-red-500" />
                   </Button>
                 </div>

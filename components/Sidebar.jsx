@@ -9,10 +9,17 @@ import {
   XIcon,
 } from "lucide-react";
 import Link from "next/link";
-import UserContext from "@/app/server/userContext";
+
+import { signOut, useSession } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
-  const { user, logout } = useContext(UserContext);
+  const { data: session } = useSession();
+  const router = useRouter();
+
+  const handleLogout = () => {
+    signOut();
+  };
 
   return (
     <div
@@ -53,7 +60,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
           <Button
             variant="ghost"
             className="w-full justify-start"
-            onClick={logout}
+            onClick={handleLogout}
           >
             <LogOut className="mr-2 h-4 w-4" />
             Logout

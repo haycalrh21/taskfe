@@ -1,7 +1,8 @@
+"use client";
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
-import axios from "axios";
+
 import { Edit, PlusIcon, StarIcon, Trash2 } from "lucide-react";
 import { Button } from "../../ui/button";
 import {
@@ -15,10 +16,17 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
-import { format, parseISO } from "date-fns";
-import { id } from "date-fns/locale";
-import baseUrl from "@/lib/baseUrl";
+import moment from "moment";
+import "moment/locale/id"; // Import locale Bahasa Indonesia
 
+import { useSession } from "next-auth/react";
+import {
+  createTask,
+  deleteTask,
+  getTasks,
+  updateTask,
+} from "@/app/action/task";
+moment.locale("id");
 const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   <form
     className="space-y-4"
@@ -98,18 +106,13 @@ const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   </form>
 );
 
-const CardTask = ({ setTotalTasks }) => {
-  const [taskUpdated, setTaskUpdated] = useState(false);
-
-  useEffect(() => {
-    if (taskUpdated) {
-      fetchTasks();
-      setTaskUpdated(false); // Reset the flag after fetching
-    }
-  }, [taskUpdated]);
+const CardTask = () => {
+  const { data: session, status } = useSession();
+  const [data, setDataTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
   const [editTask, setEditTask] = useState(null);
   const [formData, setFormData] = useState({
+    user: session?.user?._id,
     title: "",
     description: "",
     dueDate: "",
@@ -117,38 +120,25 @@ const CardTask = ({ setTotalTasks }) => {
     completed: false,
   });
   const [activeFilter, setActiveFilter] = useState("All");
-  const [error, setError] = useState(null);
 
-  const fetchTasks = async () => {
-    try {
-      const token = localStorage.getItem("authToken");
-      const response = await axios.get(`${baseUrl}/task/tasks`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-      if (response.status === 200) {
-        setTasks(response.data);
-      } else {
-        setError(`Unexpected response status: ${response.status}`);
-      }
-    } catch (error) {
-      setError(error.response?.data || error.message);
-      console.error("Error fetching tasks:", error);
+  const fetchData = async () => {
+    const userId = session?.user?._id;
+
+    if (userId) {
+      const response = await getTasks(userId);
+      const tasks = JSON.parse(response);
+      setDataTasks(tasks);
     }
   };
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    if (status === "authenticated") {
+      fetchData();
+    }
+  }, [status]);
 
   const handleEditClick = (task) => {
-    if (!task._id) {
-      console.error("Task ID is missing in the task object.");
-      return;
-    }
-    setEditTask(task);
+    setEditTask(task); // Simpan task yang sedang diedit
     setFormData({
       title: task.title,
       description: task.description,
@@ -168,73 +158,18 @@ const CardTask = ({ setTotalTasks }) => {
 
   const handleEditSubmit = async (e) => {
     e.preventDefault();
-    if (!editTask?._id) {
-      console.error("Task ID is missing.");
-      return;
-    }
-
     try {
-      const token = localStorage.getItem("authToken");
-      const response = await axios.patch(
-        `${baseUrl}/task/edit/${editTask._id}`,
-        {
-          title: formData.title,
-          description: formData.description,
-          completed: formData.completed,
-          priority: formData.priority,
-          // Jangan sertakan dueDate
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
+      // Pastikan 'editTask' menyimpan ID task yang sedang diedit
+      const updatedTask = await updateTask(editTask._id, formData);
+
+      // Update state tasks secara langsung tanpa fetch ulang data
+      setDataTasks((prevTasks) =>
+        prevTasks.map((task) =>
+          task._id === updatedTask._id ? updatedTask : task
+        )
       );
 
-      if (response.status === 200) {
-        fetchTasks();
-        setEditTask(null);
-      } else {
-        "Unexpected response status:", response.status;
-      }
-    } catch (error) {
-      console.error(
-        "Error updating task:",
-        error.response?.data || error.message
-      );
-    }
-  };
-
-  const filteredTasks =
-    tasks?.filter((t) => {
-      if (activeFilter === "All") return true;
-      return t.priority.toLowerCase() === activeFilter.toLowerCase();
-    }) || [];
-
-  const formatDate = (dateString) => {
-    try {
-      const date = parseISO(dateString);
-      return format(date, "dd MMMM yyyy", { locale: id });
-    } catch (error) {
-      console.error("Error formatting date:", error);
-      return "Tanggal tidak valid";
-    }
-  };
-
-  const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken");
-    try {
-      await axios.post(`${baseUrl}/task/create-task`, formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-      // Fetch ulang tasks setelah task baru ditambahkan
-      // Clear form setelah berhasil submit
-      setTaskUpdated(true);
-      fetchTasks();
+      setEditTask(null); // Reset edit task
       setFormData({
         title: "",
         description: "",
@@ -242,12 +177,48 @@ const CardTask = ({ setTotalTasks }) => {
         priority: "low",
         completed: false,
       });
-      setTaskUpdated(true);
-      fetchTasks();
+    } catch (error) {
+      console.error("Error updating task:", error);
+    }
+  };
+
+  const handleSubmit = async () => {
+    try {
+      // Create task logic here
+      await createTask(formData);
+      fetchData();
+      setFormData({
+        title: "",
+        description: "",
+        dueDate: "",
+        priority: "low",
+        completed: false,
+      });
     } catch (error) {
       console.error("Error creating task:", error);
     }
   };
+
+  const filteredTasks =
+    data?.filter((t) => {
+      if (activeFilter === "All") return true;
+      return t.priority.toLowerCase() === activeFilter.toLowerCase();
+    }) || [];
+  const formatDate = (dateString) => {
+    if (!dateString) {
+      console.error("Invalid date input:", dateString);
+      return "Tanggal tidak valid";
+    }
+
+    try {
+      // Menggunakan moment untuk format tanggal
+      return moment(dateString).format("DD MMMM YYYY");
+    } catch (error) {
+      console.error("Error formatting date:", error);
+      return "Tanggal tidak valid";
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -385,20 +356,6 @@ const CardTask = ({ setTotalTasks }) => {
                               />
                             </div>
 
-                            {/* Hapus bagian input tanggal */}
-                            {/* <div>
-    <label className="block text-sm font-medium text-gray-700">
-      Due Date
-    </label>
-    <input
-      type="date"
-      name="dueDate"
-      value={formData.dueDate}
-      onChange={handleChange}
-      className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-    />
-  </div> */}
-
                             <div>
                               <label className="block text-sm font-medium text-gray-700">
                                 Priority
@@ -461,18 +418,8 @@ const CardTask = ({ setTotalTasks }) => {
                                 type="button"
                                 onClick={async () => {
                                   try {
-                                    const token =
-                                      localStorage.getItem("authToken");
-                                    await axios.delete(
-                                      `${baseUrl}/task/task/${task._id}`,
-                                      {
-                                        headers: {
-                                          Authorization: `Bearer ${token}`,
-                                        },
-                                        withCredentials: true,
-                                      }
-                                    );
-                                    fetchTasks();
+                                    await deleteTask(task._id);
+                                    fetchData();
                                   } catch (error) {
                                     console.error(
                                       "Error deleting task:",
