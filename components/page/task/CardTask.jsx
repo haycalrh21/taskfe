@@ -5,6 +5,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 
 import { Edit, PlusIcon, StarIcon, Trash2 } from "lucide-react";
 import { Button } from "../../ui/button";
+
+import moment from "moment";
+import "moment/locale/id"; // Import locale Bahasa Indonesia
+
+import { useSession } from "next-auth/react";
+import {
+  createTask,
+  deleteTask,
+  getTasks,
+  updateTask,
+} from "../../../app/action/task";
+
+import { Spinner } from "theme-ui";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,17 +28,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import moment from "moment";
-import "moment/locale/id"; // Import locale Bahasa Indonesia
+} from "../../../components/ui/alert-dialog";
 
-import { useSession } from "next-auth/react";
-import {
-  createTask,
-  deleteTask,
-  getTasks,
-  updateTask,
-} from "@/app/action/task";
 moment.locale("id");
 const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   <form
@@ -110,6 +114,8 @@ const CardTask = () => {
   const { data: session, status } = useSession();
   const [data, setDataTasks] = useState([]);
   const [tasks, setTasks] = useState([]);
+  const [loading, setLoading] = useState(true); // Tambahkan state untuk loading
+
   const [editTask, setEditTask] = useState(null);
   const [formData, setFormData] = useState({
     user: session?.user?._id,
@@ -122,12 +128,20 @@ const CardTask = () => {
   const [activeFilter, setActiveFilter] = useState("All");
 
   const fetchData = async () => {
+    setLoading(true); // Mulai loading
     const userId = session?.user?._id;
 
     if (userId) {
-      const response = await getTasks(userId);
-      const tasks = JSON.parse(response);
-      setDataTasks(tasks);
+      try {
+        const response = await getTasks(userId);
+        const tasks = JSON.parse(response);
+        setDataTasks(tasks);
+        // console.log(tasks);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      } finally {
+        setLoading(false); // Selesai loading
+      }
     }
   };
 
@@ -252,196 +266,211 @@ const CardTask = () => {
         </AlertDialog>
       </CardHeader>
       <CardContent>
-        <Tabs value={activeFilter} className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            {["All", "Low", "Medium", "High"].map((filter) => (
-              <TabsTrigger
-                key={filter}
-                value={filter}
-                onClick={() => setActiveFilter(filter)}
-              >
-                {filter}
-              </TabsTrigger>
-            ))}
-          </TabsList>
+        {loading ?
+          <div className="flex justify-center items-center">
+            <Spinner />
+          </div>
+        : <Tabs value={activeFilter} className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              {["All", "Low", "Medium", "High"].map((filter) => (
+                <TabsTrigger
+                  key={filter}
+                  value={filter}
+                  onClick={() => setActiveFilter(filter)}
+                >
+                  {filter}
+                </TabsTrigger>
+              ))}
+            </TabsList>
 
-          <TabsContent value={activeFilter}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-              {filteredTasks.map((task) => (
-                <Card key={task._id} className="bg-white">
-                  <CardContent className="p-4">
-                    <div className="flex justify-between items-start">
-                      <div>
-                        <h3 className="font-semibold text-lg">{task.title}</h3>
-                        <p className="text-sm text-gray-500">
-                          {task.description}
-                        </p>
+            <TabsContent value={activeFilter}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                {filteredTasks.map((task) => (
+                  <Card key={task._id} className="bg-white">
+                    <CardContent className="p-4">
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h3 className="font-semibold text-lg">
+                            {task.title}
+                          </h3>
+                          <p className="text-sm text-gray-500">
+                            {task.description}
+                          </p>
+                        </div>
+                        <StarIcon className="h-5 w-5 text-gray-400" />
                       </div>
-                      <StarIcon className="h-5 w-5 text-gray-400" />
-                    </div>
-                    <div className="flex justify-between items-center mt-4">
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          task.priority === "low"
-                            ? "bg-green-100 text-green-800"
-                            : task.priority === "medium"
-                            ? "bg-yellow-500 text-yellow-800"
-                            : task.priority === "high"
-                            ? "bg-red-100 text-red-800"
+                      <div className="flex justify-between items-center mt-4">
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            task.priority === "low" ?
+                              "bg-green-100 text-green-800"
+                            : task.priority === "medium" ?
+                              "bg-yellow-500 text-yellow-800"
+                            : task.priority === "high" ?
+                              "bg-red-100 text-red-800"
                             : ""
-                        }`}
-                      >
-                        {task.priority}
-                      </span>
-                      <span className="text-xs text-gray-500">
-                        {formatDate(task.dueDate)}
-                      </span>
-                      <span
-                        className={`text-xs px-2 py-1 rounded ${
-                          task.completed
-                            ? "bg-blue-100 text-blue-800"
+                          }`}
+                        >
+                          {task.priority}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {formatDate(task.dueDate)}
+                        </span>
+                        <span
+                          className={`text-xs px-2 py-1 rounded ${
+                            task.completed ?
+                              "bg-blue-100 text-blue-800"
                             : "bg-gray-100 text-gray-800"
-                        }`}
-                      >
-                        {task.completed ? "Sudah selesai" : "Belum selesai"}
-                      </span>
-                    </div>
-                    <div className="flex justify-end space-x-2 mt-4">
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="p-1">
-                            <Edit
-                              className="h-4 w-4 text-blue-500 cursor-pointer"
-                              onClick={() => handleEditClick(task)}
-                            />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Edit Task</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Edit your task details below.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <form
-                            onSubmit={handleEditSubmit}
-                            className="space-y-4"
-                          >
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Task Title
-                              </label>
-                              <input
-                                type="text"
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Enter task title"
-                                required
+                          }`}
+                        >
+                          {task.completed ? "Sudah selesai" : "Belum selesai"}
+                        </span>
+                      </div>
+                      <div className="flex justify-end space-x-2 mt-4">
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="p-1"
+                            >
+                              <Edit
+                                className="h-4 w-4 text-blue-500 cursor-pointer"
+                                onClick={() => handleEditClick(task)}
                               />
-                            </div>
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Edit Task</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Edit your task details below.
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <form
+                              onSubmit={handleEditSubmit}
+                              className="space-y-4"
+                            >
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  Task Title
+                                </label>
+                                <input
+                                  type="text"
+                                  name="title"
+                                  value={formData.title}
+                                  onChange={handleChange}
+                                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  placeholder="Enter task title"
+                                  required
+                                />
+                              </div>
 
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Description
-                              </label>
-                              <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                rows="3"
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                                placeholder="Enter task description"
-                              />
-                            </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  Description
+                                </label>
+                                <textarea
+                                  name="description"
+                                  value={formData.description}
+                                  onChange={handleChange}
+                                  rows="3"
+                                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                  placeholder="Enter task description"
+                                />
+                              </div>
 
-                            <div>
-                              <label className="block text-sm font-medium text-gray-700">
-                                Priority
-                              </label>
-                              <select
-                                name="priority"
-                                value={formData.priority}
-                                onChange={handleChange}
-                                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-                              >
-                                <option value="low">Low</option>
-                                <option value="medium">Medium</option>
-                                <option value="high">High</option>
-                              </select>
-                            </div>
+                              <div>
+                                <label className="block text-sm font-medium text-gray-700">
+                                  Priority
+                                </label>
+                                <select
+                                  name="priority"
+                                  value={formData.priority}
+                                  onChange={handleChange}
+                                  className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                                >
+                                  <option value="low">Low</option>
+                                  <option value="medium">Medium</option>
+                                  <option value="high">High</option>
+                                </select>
+                              </div>
 
-                            <div className="flex items-center">
-                              <input
-                                type="checkbox"
-                                name="completed"
-                                checked={formData.completed}
-                                onChange={handleChange}
-                                className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
-                              />
-                              <label className="ml-2 block text-sm font-medium text-gray-700">
-                                Mark as Completed
-                              </label>
-                            </div>
+                              <div className="flex items-center">
+                                <input
+                                  type="checkbox"
+                                  name="completed"
+                                  checked={formData.completed}
+                                  onChange={handleChange}
+                                  className="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded"
+                                />
+                                <label className="ml-2 block text-sm font-medium text-gray-700">
+                                  Mark as Completed
+                                </label>
+                              </div>
 
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>
+                                  <Button type="button">Cancel</Button>
+                                </AlertDialogCancel>
+                                <AlertDialogAction>
+                                  <Button type="submit">Save</Button>
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </form>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button
+                              variant="outline"
+                              size="icon"
+                              className="p-1"
+                            >
+                              <Trash2 className="h-4 w-4 text-red-500 cursor-pointer" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>Delete Task</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                Are you sure you want to delete this task?
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
                             <AlertDialogFooter>
                               <AlertDialogCancel>
                                 <Button type="button">Cancel</Button>
                               </AlertDialogCancel>
                               <AlertDialogAction>
-                                <Button type="submit">Save</Button>
+                                <Button
+                                  type="button"
+                                  onClick={async () => {
+                                    try {
+                                      await deleteTask(task._id);
+                                      fetchData();
+                                    } catch (error) {
+                                      console.error(
+                                        "Error deleting task:",
+                                        error.response?.data || error.message
+                                      );
+                                    }
+                                  }}
+                                  className="bg-red-600 text-white"
+                                >
+                                  Delete
+                                </Button>
                               </AlertDialogAction>
                             </AlertDialogFooter>
-                          </form>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="outline" size="icon" className="p-1">
-                            <Trash2 className="h-4 w-4 text-red-500 cursor-pointer" />
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Task</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to delete this task?
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>
-                              <Button type="button">Cancel</Button>
-                            </AlertDialogCancel>
-                            <AlertDialogAction>
-                              <Button
-                                type="button"
-                                onClick={async () => {
-                                  try {
-                                    await deleteTask(task._id);
-                                    fetchData();
-                                  } catch (error) {
-                                    console.error(
-                                      "Error deleting task:",
-                                      error.response?.data || error.message
-                                    );
-                                  }
-                                }}
-                                className="bg-red-600 text-white"
-                              >
-                                Delete
-                              </Button>
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-        </Tabs>
+                          </AlertDialogContent>
+                        </AlertDialog>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+          </Tabs>
+        }
       </CardContent>
     </Card>
   );

@@ -51,7 +51,7 @@ const Sidebar = ({ isSidebarOpen, toggleSidebar }) => {
           </Button>
           <Button variant="ghost" className="w-full justify-start mb-2">
             <BarChartIcon className="mr-2 h-4 w-4" />
-            Analytics
+            <Link href="/analytics"> analytics</Link>
           </Button>
           <Button variant="ghost" className="w-full justify-start">
             <SettingsIcon className="mr-2 h-4 w-4" />

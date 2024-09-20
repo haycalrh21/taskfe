@@ -11,11 +11,11 @@ export async function getReference(userId) {
   return JSON.stringify(reference);
 }
 
-export async function createTask(formData) {
+export async function createReference(formData) {
   await connectMongo();
 
-  const task = new TaskModel(formData);
-  await task.save();
+  const reference = new ReferenceModel(formData);
+  await reference.save();
 }
 
 export async function deleteReference(referenceId) {

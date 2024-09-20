@@ -17,8 +17,13 @@ import { PlusIcon, Trash2 } from "lucide-react";
 
 import axios from "axios";
 import { useSession } from "next-auth/react";
-import { deleteReference, getReference } from "@/app/action/reference";
+import {
+  createReference,
+  deleteReference,
+  getReference,
+} from "@/app/action/reference";
 import Link from "next/link";
+import { Spinner } from "theme-ui";
 
 const TaskForm = ({ formData, handleChange, handleSubmit }) => (
   <form
@@ -66,13 +71,19 @@ const CardReference = () => {
   const [data, setDataReference] = useState([]);
 
   const fetchData = async () => {
+    setLoading(true); // Mulai loading
     const userId = session?.user?._id;
-
-    if (userId) {
-      const response = await getReference(userId);
-      const reference = JSON.parse(response);
-      setDataReference(reference);
-      // console.log(reference);
+    try {
+      if (userId) {
+        const response = await getReference(userId);
+        const reference = JSON.parse(response);
+        console.log("Reference data: ", reference); // Tambahkan log di sini
+        setDataReference(reference);
+      }
+    } catch (error) {
+      console.error("Error fetching reference:", error); // Tambahkan error log
+    } finally {
+      setLoading(false); // Selesai loading
     }
   };
 
@@ -87,10 +98,6 @@ const CardReference = () => {
     link: "",
   });
 
-  useEffect(() => {
-    fetchData();
-  }, []);
-
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
@@ -100,35 +107,29 @@ const CardReference = () => {
   };
 
   const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken");
+    const userId = session?.user?._id; // Pastikan session user ID ada
+    if (!userId) return; // Jika tidak ada user ID, hentikan proses
 
     try {
-      const response = await axios.post(
-        `/reference/create-reference`,
-        {
-          name: formData.reference,
-          link: formData.link,
-        },
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true,
-        }
-      );
+      // Gabungkan formData dengan userId dan ganti 'reference' dengan 'name'
+      const dataToSubmit = {
+        ...formData,
+        user: userId,
+        name: formData.reference,
+      };
 
-      // Clear the form data after successful submission
+      await createReference(dataToSubmit);
+
+      // Clear form setelah submit sukses
       setFormData({
         reference: "",
         link: "",
       });
-      // Refetch the data to update the list
+
+      // Refetch data setelah submit
       fetchData();
     } catch (error) {
-      console.error(
-        "Error creating reference:",
-        error.response?.data || error.message
-      );
+      console.error("Error creating reference:", error.message);
     }
   };
 
@@ -184,40 +185,45 @@ const CardReference = () => {
         </AlertDialog>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-          {data.map((ref) => (
-            <Card
-              key={ref._id}
-              className="bg-white shadow-lg rounded-lg border border-gray-200"
-            >
-              <CardContent className="p-4">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <h3 className="font-semibold text-lg">{ref.name}</h3>
-                    <Link
-                      href={ref.link}
-                      className="text-sm text-gray-500"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {ref.link}
-                    </Link>
+        {loading ?
+          <div className="flex justify-center items-center">
+            <Spinner />
+          </div>
+        : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+            {data.map((ref) => (
+              <Card
+                key={ref._id}
+                className="bg-white shadow-lg rounded-lg border border-gray-200"
+              >
+                <CardContent className="p-4">
+                  <div className="flex justify-between items-start">
+                    <div>
+                      <h3 className="font-semibold text-lg">{ref.name}</h3>
+                      <Link
+                        href={ref.link}
+                        className="text-sm text-gray-500"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {ref.link}
+                      </Link>
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end space-x-2 mt-4">
-                  <Button
-                    variant="outline"
-                    size="icon"
-                    className="p-1"
-                    onClick={() => handleDeleteReference(ref._id)}
-                  >
-                    <Trash2 className="h-4 w-4 text-red-500" />
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                  <div className="flex justify-end space-x-2 mt-4">
+                    <Button
+                      variant="outline"
+                      size="icon"
+                      className="p-1"
+                      onClick={() => handleDeleteReference(ref._id)}
+                    >
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        }
       </CardContent>
     </Card>
   );

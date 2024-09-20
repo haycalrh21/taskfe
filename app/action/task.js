@@ -5,11 +5,23 @@ import TaskModel from "../models/taskModel";
 
 export async function getTasks(userId) {
   await connectMongo();
-
-  const tasks = await TaskModel.find({ user: userId }).lean(); // Gunakan .lean() untuk mengonversi ke objek biasa
+  const tasks = await TaskModel.find({ user: userId }).lean();
   return JSON.stringify(tasks);
 }
 
+// Mengambil task yang belum selesai
+export async function getTasksUnfinished(userId) {
+  await connectMongo();
+  const tasks = await TaskModel.find({ user: userId, completed: false }).lean();
+  return JSON.stringify(tasks);
+}
+
+// Mengambil task yang sudah selesai
+export async function getTasksFinished(userId) {
+  await connectMongo();
+  const tasks = await TaskModel.find({ user: userId, completed: true }).lean();
+  return JSON.stringify(tasks);
+}
 export async function createTask(formData) {
   await connectMongo();
 

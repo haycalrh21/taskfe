@@ -8,127 +8,38 @@ import {
   PlusIcon,
   UserIcon,
 } from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+
 
 import { useSession } from "next-auth/react";
-
-const TaskForm = ({ formData, handleChange, handleSubmit }) => (
-  <form className="space-y-4">
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Task Title
-      </label>
-      <input
-        type="text"
-        name="title"
-        value={formData.title}
-        onChange={handleChange}
-        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        placeholder="Enter task title"
-        required
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Description
-      </label>
-      <textarea
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        placeholder="Enter task description"
-        rows="3"
-        required
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Due Date
-      </label>
-      <input
-        type="date"
-        name="dueDate"
-        value={formData.dueDate}
-        onChange={handleChange}
-        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      />
-    </div>
-    <div>
-      <label className="block text-sm font-medium text-gray-700">
-        Priority
-      </label>
-      <select
-        name="priority"
-        value={formData.priority}
-        onChange={handleChange}
-        className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-      >
-        <option value="low">Low</option>
-        <option value="medium">Medium</option>
-        <option value="high">High</option>
-      </select>
-    </div>
-    <div className="flex items-center">
-      <input
-        id="completed"
-        name="completed"
-        type="checkbox"
-        checked={formData.completed}
-        onChange={handleChange}
-        className="h-4 w-4 text-indigo-600 border-gray-300 rounded"
-      />
-      <label htmlFor="completed" className="ml-2 block text-sm text-gray-900">
-        Completed
-      </label>
-    </div>
-  </form>
-);
+import { getTasksUnfinished } from "../app/action/task";
 
 const Header = ({ toggleSidebar, totalTasks }) => {
-  const { data: session } = useSession();
-  // console.log(session?.user?.email);
-  const [formData, setFormData] = useState({
-    title: "",
-    description: "",
-    dueDate: "",
-    priority: "low",
-    completed: false,
-  });
+  const { data: session, status } = useSession();
 
-  const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    setFormData({
-      ...formData,
-      [name]: type === "checkbox" ? checked : value,
-    });
-  };
+  const [data, setData] = useState([]);
+  const fetchData = async () => {
+    // setLoading(true); // Mulai loading
+    const userId = session?.user?._id;
 
-  const handleSubmit = async () => {
-    const token = localStorage.getItem("authToken");
-    try {
-      const response = await axios.post("", formData, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
-
-      fetchTasks(); // Refresh task list setelah submit
-    } catch (error) {
-      console.error("Error creating task:", error);
+    if (userId) {
+      try {
+        const response = await getTasksUnfinished(userId);
+        const tasks = JSON.parse(response);
+        setData(tasks.length);
+      } catch (error) {
+        console.error("Error fetching tasks:", error);
+      } finally {
+        // setLoading(false); // Selesai loading
+      }
     }
   };
+
+  useEffect(() => {
+    if (status === "authenticated") {
+      fetchData();
+    }
+  }, [status]);
+  // console.log(session?.user?.email);
 
   return (
     <header className="bg-white shadow">
@@ -148,38 +59,11 @@ const Header = ({ toggleSidebar, totalTasks }) => {
                 👋 Welcome, {session?.user?.email}
               </h1>
               <p className="text-sm text-gray-600 mt-1">
-                You have {totalTasks} active tasks
+                You have {data} active tasks
               </p>
             </div>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline">
-                  <PlusIcon className="mr-2 h-4 w-4" />
-                  Create Task
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Create New Task</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    Fill in the details below to create a new task.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <TaskForm
-                  formData={formData}
-                  handleChange={handleChange}
-                  handleSubmit={handleSubmit}
-                />
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleSubmit}>
-                    Create Task
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
             <div className="flex space-x-2">
               <Button variant="outline" size="icon">
                 <GithubIcon className="h-4 w-4" />

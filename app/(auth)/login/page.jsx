@@ -1,8 +1,8 @@
 "use client";
 import { useState } from "react";
 import { signIn, useSession } from "next-auth/react";
-
 import { useRouter } from "next/navigation";
+import { Spinner } from "theme-ui"; 
 
 const Login = () => {
   const { data: session, status } = useSession();
@@ -11,7 +11,7 @@ const Login = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  // console.log(session);
+
   if (status === "authenticated") {
     router.replace("/"); // Ganti URL tanpa menambahkannya ke history
     return null; // Jangan render apapun jika sudah terautentikasi
@@ -19,19 +19,21 @@ const Login = () => {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true); // Set loading menjadi true saat login diproses
     setError("");
 
-    // Panggil NextAuth signIn function
     const result = await signIn("credentials", {
       email,
       password,
       redirect: false, // Jangan redirect otomatis
     });
 
+    setLoading(false); // Set loading menjadi false setelah login selesai
+
     if (result.error) {
       setError(result.error); // Tampilkan pesan error jika ada
     } else {
-      // Redirect ke halaman setelah login sukses (misalnya home page)
+      router.replace("/"); // Redirect ke halaman setelah login sukses
     }
   };
 
@@ -77,11 +79,13 @@ const Login = () => {
           <button
             type="submit"
             disabled={loading} // Disable button saat loading
-            className={`w-full px-4 py-2 ${
+            className={`w-full px-4 py-2 flex justify-center items-center ${
               loading ? "bg-gray-500" : "bg-indigo-600 hover:bg-indigo-700"
             } text-white font-semibold rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2`}
           >
-            {loading ? "Logging in..." : "Login"}
+            {loading ?
+              <Spinner size={24} /> // Tampilkan spinner saat loading
+            : "Login"}
           </button>
         </form>
       </div>
