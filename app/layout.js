@@ -5,16 +5,6 @@ export const metadata = {
   title: "Task App",
   description: "Task App with support for PWA",
   manifest: "/manifest.json",
-  appleWebApp: {
-    capable: true,
-    title: "Task App",
-    statusBarStyle: "default",
-    startupImage: [
-      {
-        url: "/images.jpg",
-      },
-    ],
-  },
 };
 
 export default function RootLayout({ children }) {
