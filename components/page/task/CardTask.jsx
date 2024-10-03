@@ -152,8 +152,9 @@ const CardTask = () => {
   }, [status]);
 
   const handleEditClick = (task) => {
-    setEditTask(task); // Simpan task yang sedang diedit
+    setEditTask(task);
     setFormData({
+      user: session?.user?._id, // Ensure user is set
       title: task.title,
       description: task.description,
       dueDate: task.dueDate,
@@ -266,11 +267,12 @@ const CardTask = () => {
         </AlertDialog>
       </CardHeader>
       <CardContent>
-        {loading ?
+        {loading ? (
           <div className="flex justify-center items-center">
             <Spinner />
           </div>
-        : <Tabs value={activeFilter} className="w-full">
+        ) : (
+          <Tabs value={activeFilter} className="w-full">
             <TabsList className="grid w-full grid-cols-4">
               {["All", "Low", "Medium", "High"].map((filter) => (
                 <TabsTrigger
@@ -302,13 +304,13 @@ const CardTask = () => {
                       <div className="flex justify-between items-center mt-4">
                         <span
                           className={`text-xs px-2 py-1 rounded ${
-                            task.priority === "low" ?
-                              "bg-green-100 text-green-800"
-                            : task.priority === "medium" ?
-                              "bg-yellow-500 text-yellow-800"
-                            : task.priority === "high" ?
-                              "bg-red-100 text-red-800"
-                            : ""
+                            task.priority === "low"
+                              ? "bg-green-100 text-green-800"
+                              : task.priority === "medium"
+                              ? "bg-yellow-500 text-yellow-800"
+                              : task.priority === "high"
+                              ? "bg-red-100 text-red-800"
+                              : ""
                           }`}
                         >
                           {task.priority}
@@ -318,9 +320,9 @@ const CardTask = () => {
                         </span>
                         <span
                           className={`text-xs px-2 py-1 rounded ${
-                            task.completed ?
-                              "bg-blue-100 text-blue-800"
-                            : "bg-gray-100 text-gray-800"
+                            task.completed
+                              ? "bg-blue-100 text-blue-800"
+                              : "bg-gray-100 text-gray-800"
                           }`}
                         >
                           {task.completed ? "Sudah selesai" : "Belum selesai"}
@@ -410,11 +412,9 @@ const CardTask = () => {
                               </div>
 
                               <AlertDialogFooter>
-                                <AlertDialogCancel>
-                                  <Button type="button">Cancel</Button>
-                                </AlertDialogCancel>
-                                <AlertDialogAction>
-                                  <Button type="submit">Save</Button>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction onClick={handleEditSubmit}>
+                                  Save
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </form>
@@ -470,7 +470,7 @@ const CardTask = () => {
               </div>
             </TabsContent>
           </Tabs>
-        }
+        )}
       </CardContent>
     </Card>
   );

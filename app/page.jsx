@@ -5,6 +5,7 @@ import CardSide from "../components/page/task/CardSide";
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "theme-ui";
+import TaskManager from "@/components/page/task/TaskManager";
 
 export default function Home() {
   const { data: session, status } = useSession();
@@ -22,8 +23,7 @@ export default function Home() {
 
   return (
     <Layout
-      mainContent={<CardTask />} // Konten utama
-      sideContent={<CardSide />}
+      mainContent={<TaskManager />} // Konten utama
     />
   );
 }

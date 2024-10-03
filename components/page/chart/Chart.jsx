@@ -1,6 +1,5 @@
 "use client";
 
-import { TrendingUp } from "lucide-react";
 import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
 import {
   Card,
@@ -68,9 +67,7 @@ export default function MyChart() {
         const response = await getReference(userId);
         const references = JSON.parse(response);
         setReferences(references);
-        console.log("References:", references);
       } catch (error) {
-        console.error("Error fetching references:", error);
       } finally {
         setLoading(false);
       }
@@ -103,10 +100,10 @@ export default function MyChart() {
 
   months.forEach((month, index) => {
     const monthTasks = dataTasks.filter(
-      (task) => moment(task.date).month() === index
+      (task) => moment(task.createdAt).month() === index
     );
     const monthReferences = dataReferences.filter(
-      (reference) => moment(reference.date).month() === index
+      (reference) => moment(reference.createdAt).month() === index
     );
 
     chartData.push({
@@ -124,7 +121,7 @@ export default function MyChart() {
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig}>
-          <BarChart accessibilityLayer data={chartData}>
+          <BarChart data={chartData}>
             <CartesianGrid vertical={false} />
             <XAxis
               dataKey="month"
@@ -146,14 +143,6 @@ export default function MyChart() {
           </BarChart>
         </ChartContainer>
       </CardContent>
-      <CardFooter className="flex-col items-start gap-2 text-sm">
-        <div className="flex gap-2 font-medium leading-none">
-          Trending up by 5.2% this month <TrendingUp className="h-4 w-4" />
-        </div>
-        <div className="leading-none text-muted-foreground">
-          Showing total tasks and references for the last 6 months
-        </div>
-      </CardFooter>
     </Card>
   );
 }

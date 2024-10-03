@@ -2,6 +2,20 @@
 
 import connectMongo from "@/lib/mongoDb";
 import TaskModel from "../models/taskModel";
+export async function updateTask(taskId, formData) {
+  await connectMongo();
+
+  // Menggunakan opsi `{ new: true }` untuk mengembalikan dokumen yang telah diperbarui.
+  const updatedTask = await TaskModel.findByIdAndUpdate(taskId, formData, {
+    new: true,
+  }).lean(); // Mengubah ke plain object
+
+  if (!updatedTask) {
+    throw new Error("Task not found");
+  }
+
+  return updatedTask;
+}
 
 export async function getTasks(userId) {
   await connectMongo();
@@ -35,19 +49,4 @@ export async function deleteTask(taskId) {
   await TaskModel.findByIdAndDelete(taskId);
 
   return taskId;
-}
-
-export async function updateTask(taskId, formData) {
-  await connectMongo();
-
-  // Menggunakan opsi `{ new: true }` untuk mengembalikan dokumen yang telah diperbarui.
-  const updatedTask = await TaskModel.findByIdAndUpdate(taskId, formData, {
-    new: true,
-  }).lean(); // Mengubah ke plain object
-
-  if (!updatedTask) {
-    throw new Error("Task not found");
-  }
-
-  return updatedTask;
 }

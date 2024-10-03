@@ -1,14 +1,7 @@
 "use client";
 import React, { useContext, useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import {
-  GithubIcon,
-  MenuIcon,
-  MoonIcon,
-  PlusIcon,
-  UserIcon,
-} from "lucide-react";
-
+import { GithubIcon, MenuIcon, MoonIcon, UserIcon } from "lucide-react";
 
 import { useSession } from "next-auth/react";
 import { getTasksUnfinished } from "../app/action/task";
@@ -39,7 +32,6 @@ const Header = ({ toggleSidebar, totalTasks }) => {
       fetchData();
     }
   }, [status]);
-  // console.log(session?.user?.email);
 
   return (
     <header className="bg-white shadow">
