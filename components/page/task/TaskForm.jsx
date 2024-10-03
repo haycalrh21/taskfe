@@ -28,7 +28,6 @@ const TaskForm = ({ session, onClose, fetchData }) => {
       user: session?.user?._id,
     };
 
-    console.log("Submitting form with data:", formData); // Debugging
     const response = await createTask(formData);
 
     resetForm();

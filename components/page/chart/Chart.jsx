@@ -49,7 +49,6 @@ export default function MyChart() {
         const response = await getTasks(userId);
         const tasks = JSON.parse(response);
         setDataTasks(tasks);
-        console.log("Tasks:", tasks);
       } catch (error) {
         console.error("Error fetching tasks:", error);
       } finally {

@@ -1,7 +1,6 @@
 "use client";
 import Layout from "../components/layout/LayoutIndex";
-import CardTask from "../components/page/task/CardTask";
-import CardSide from "../components/page/task/CardSide";
+
 import { useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
 import { Spinner } from "theme-ui";

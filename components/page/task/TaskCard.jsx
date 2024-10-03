@@ -15,12 +15,12 @@ import {
 } from "../../../components/ui/alert-dialog";
 import { formatDate } from "@/lib/dataTime";
 import EditTaskDialog from "./EditTaskDialog";
+import { deleteTask } from "@/app/action/task";
 
 const TaskCard = ({
   task,
   handleEditClick,
-  handleEditSubmit,
-  deleteTask,
+
   fetchData,
   setTasks,
   handleChange,
@@ -69,17 +69,8 @@ const TaskCard = ({
           </span>
         </div>
         <div className="flex justify-end space-x-2 mt-4">
-          {/* Edit Button */}
           <EditTaskDialog
             task={task}
-            onEditSubmit={(updatedTask) => {
-              // Memperbarui daftar tugas dengan task yang baru diperbarui
-              setTasks((prevTasks) =>
-                prevTasks.map((t) =>
-                  t._id === updatedTask._id ? updatedTask : t
-                )
-              );
-            }}
             formData={{
               title: task.title,
               description: task.description,
@@ -88,6 +79,7 @@ const TaskCard = ({
               completed: task.completed,
             }}
             handleChange={handleChange}
+            fetchData={fetchData}
           />
 
           {/* Delete Button */}

@@ -32,7 +32,7 @@ const TaskManager = () => {
       try {
         const response = await getTasks(userId);
         const tasks = JSON.parse(response);
-        console.log("Fetched tasks:", tasks);
+
         setTasks(tasks);
       } catch (error) {
         // console.error("Error fetching tasks:", error);
@@ -46,7 +46,7 @@ const TaskManager = () => {
     if (status === "authenticated") {
       fetchData();
     }
-  }, [fetchData, status]);
+  }, [status]);
 
   // Fungsi untuk membuka dan menutup modal
   const openModal = () => setIsDialogOpen(true);

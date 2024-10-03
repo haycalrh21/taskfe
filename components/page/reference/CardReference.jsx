@@ -77,7 +77,7 @@ const CardReference = () => {
       if (userId) {
         const response = await getReference(userId);
         const reference = JSON.parse(response);
-        console.log("Reference data: ", reference); // Tambahkan log di sini
+
         setDataReference(reference);
       }
     } catch (error) {
@@ -185,11 +185,12 @@ const CardReference = () => {
         </AlertDialog>
       </CardHeader>
       <CardContent>
-        {loading ?
+        {loading ? (
           <div className="flex justify-center items-center">
             <Spinner />
           </div>
-        : <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {data.map((ref) => (
               <Card
                 key={ref._id}
@@ -223,7 +224,7 @@ const CardReference = () => {
               </Card>
             ))}
           </div>
-        }
+        )}
       </CardContent>
     </Card>
   );

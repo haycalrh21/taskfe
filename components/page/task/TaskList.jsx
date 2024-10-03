@@ -3,7 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import TaskCard from "./TaskCard";
 
 // Helper function to filter tasks based on the active filter
-const TaskList = ({ tasks, activeFilter, setActiveFilter, session }) => {
+const TaskList = ({
+  tasks,
+  activeFilter,
+  setActiveFilter,
+  session,
+  fetchData,
+}) => {
   // Available filters
   const filters = ["all", "low", "medium", "high"]; // Filter yang ada
 
@@ -31,7 +37,12 @@ const TaskList = ({ tasks, activeFilter, setActiveFilter, session }) => {
         <TabsContent value={activeFilter}>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
             {filteredTasks.map((task) => (
-              <TaskCard key={task._id} task={task} session={session} />
+              <TaskCard
+                key={task._id}
+                task={task}
+                session={session}
+                fetchData={fetchData}
+              />
             ))}
           </div>
         </TabsContent>

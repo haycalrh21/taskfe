@@ -1,3 +1,4 @@
+"use client";
 import React, { useState } from "react";
 import {
   AlertDialog,
@@ -14,7 +15,7 @@ import {
 import { updateTask } from "@/app/action/task";
 import { Pencil } from "lucide-react";
 
-const EditTaskDialog = ({ task, onEditSubmit }) => {
+const EditTaskDialog = ({ task, fetchData }) => {
   // State untuk form data
   const [formData, setFormData] = useState({
     title: task.title || "",
@@ -36,7 +37,7 @@ const EditTaskDialog = ({ task, onEditSubmit }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const response = await updateTask(task._id, formData);
-    onEditSubmit(response);
+    fetchData();
   };
 
   return (
