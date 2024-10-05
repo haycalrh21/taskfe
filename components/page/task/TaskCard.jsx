@@ -33,10 +33,13 @@ const TaskCard = ({
     <Card className="bg-white">
       <CardContent className="p-4">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="max-w-full overflow-hidden">
             <h3 className="font-semibold text-lg">{task.title}</h3>
-            <p className="text-sm text-gray-500">{task.description}</p>
+            <p className="text-sm text-gray-500 break-words overflow-hidden">
+              {task.description}
+            </p>
           </div>
+
           <StarIcon className="h-5 w-5 text-gray-400" />
         </div>
         <div className="flex justify-between items-center mt-4">
